@@ -1,9 +1,14 @@
 package com.miyuki.timezones.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
@@ -34,6 +40,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,7 +58,6 @@ import com.miyuki.timezones.ui.components.TimezoneReorderDialog
 import com.miyuki.timezones.viewmodel.PeopleViewModel
 import com.miyuki.timezones.viewmodel.PeopleViewModelFactory
 import kotlinx.coroutines.delay
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -222,9 +230,7 @@ fun MainScreen() {
             onDismiss = {
                 showEditPerson = false
             },
-            onSave = { _, _, _, _, _, _ ->
-                // This callback is used only for adding.
-            },
+            onSave = { _, _, _, _, _, _ -> },
             onSaveEdit = { updatedPerson, updatedFields, newTimezoneId, newTimezoneName ->
                 if (newTimezoneId != null && newTimezoneName != null) {
                     viewModel.addTimezone(
@@ -262,6 +268,7 @@ fun MainScreen() {
     }
 }
 
+
 @Composable
 private fun TimeScreen(
     people: List<Person>,
@@ -269,6 +276,9 @@ private fun TimeScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     var currentTime by remember {
         mutableStateOf(ZonedDateTime.now())
@@ -287,73 +297,210 @@ private fun TimeScreen(
         }.format(Date.from(dateTime.toInstant()))
     }
 
-    fun getOrdinalSuffix(day: Int): String {
-        return when {
+    fun formatDate(dateTime: ZonedDateTime): String {
+        val day = dateTime.dayOfMonth
+        val suffix = when {
             day % 100 in 11..13 -> "th"
             day % 10 == 1 -> "st"
             day % 10 == 2 -> "nd"
             day % 10 == 3 -> "rd"
             else -> "th"
         }
+
+        return dateTime.format(
+            DateTimeFormatter.ofPattern(
+                "EEEE, d'${suffix}' MMMM yyyy",
+            ),
+        )
     }
 
-    val ordinalSuffix = getOrdinalSuffix(LocalDate.now().dayOfMonth)
-    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d'${ordinalSuffix}' MMMM yyyy")
-
+    val localPhase = getDayPhase(currentTime)
     val localTime = formatTime(currentTime)
-    val localDate = currentTime.format(dateFormatter)
+    val localDate = formatDate(currentTime)
 
-    Column(
+    val localTimezone = timezones.firstOrNull {
+        it.ianaId == currentTime.zone.id
+    }
+
+    val localPeople = people.filter {
+        it.timezoneId == localTimezone?.id
+    }
+
+    val otherTimezones = timezones.filter { timezone ->
+        timezone.ianaId != currentTime.zone.id &&
+                people.any { it.timezoneId == timezone.id }
+    }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp),
+            .background(backgroundColor),
     ) {
-        Spacer(Modifier.size(28.dp))
-
-        Text(
-            text = localTime,
-            style = MaterialTheme.typography.displayLarge,
-            fontWeight = FontWeight.Medium,
-        )
-
-        Text(
-            text = localDate,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(Modifier.size(28.dp))
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Column(
+            modifier = Modifier.fillMaxSize(),
         ) {
-            items(
-                items = timezones.filter { timezone ->
-                    val zoneTime = formatTime(
-                        currentTime.withZoneSameInstant(
-                            ZoneId.of(timezone.ianaId),
+            // The phase color fades back into the normal background
+            // before the timezone cards begin.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            colorStops = arrayOf(
+                                0.0f to localPhase.color.copy(alpha = 0.22f),
+                                0.5f to localPhase.color.copy(alpha = 0.22f),
+                                1.0f to backgroundColor,
+                            ),
                         ),
                     )
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 28.dp, bottom = 20.dp),
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    // Local phase above the clock.
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = localPhase.icon,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = localPhase.color,
+                        )
 
-                    zoneTime != localTime && people.any { it.timezoneId == timezone.id }
-                },
-                key = { it.id },
-            ) { timezone ->
-                val zoneTime = currentTime.withZoneSameInstant(
-                    ZoneId.of(timezone.ianaId),
-                )
+                        Text(
+                            text = localPhase.label,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = localPhase.color,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
 
-                val timezonePeople = people.filter {
-                    it.timezoneId == timezone.id
+                    Text(
+                        text = localTime,
+                        style = MaterialTheme.typography.displayLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = textColor,
+                    )
+
+                    Text(
+                        text = localDate,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = secondaryTextColor,
+                    )
+
+                    // People sharing your local timezone.
+                    if (localPeople.isNotEmpty()) {
+                        Spacer(Modifier.size(8.dp))
+
+                        PeopleChips(
+                            people = localPeople,
+                            accentColor = localPhase.color,
+                        )
+                    }
                 }
+            }
 
-                TimezoneCard(
-                    timezone = timezone,
-                    time = formatTime(zoneTime),
-                    people = timezonePeople,
-                )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 4.dp,
+                    bottom = 16.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(
+                    items = otherTimezones,
+                    key = { it.id },
+                ) { timezone ->
+                    val zoneTime = currentTime.withZoneSameInstant(
+                        ZoneId.of(timezone.ianaId),
+                    )
+
+                    val phase = getDayPhase(zoneTime)
+
+                    TimezoneCard(
+                        timezone = timezone,
+                        time = formatTime(zoneTime),
+                        date = formatDate(zoneTime),
+                        phase = phase,
+                        people = people.filter {
+                            it.timezoneId == timezone.id
+                        },
+                    )
+                }
             }
         }
+    }
+}
+
+private data class DayPhase(
+    val label: String,
+    val icon: String,
+    val color: Color,
+)
+
+private fun getDayPhase(time: ZonedDateTime): DayPhase {
+    val minuteOfDay = time.hour * 60 + time.minute
+
+    return when (minuteOfDay) {
+        in 0 until 180 -> DayPhase(
+            "Deep night", "✦", Color(0xFF344A91),
+        )
+
+        in 180 until 300 -> DayPhase(
+            "Pre-dawn", "☾", Color(0xFF7868B2),
+        )
+
+        in 300 until 360 -> DayPhase(
+            "Dawn", "☼", Color(0xFFC18AC2),
+        )
+
+        in 360 until 420 -> DayPhase(
+            "Sunrise", "☼", Color(0xFFF49A91),
+        )
+
+        in 420 until 540 -> DayPhase(
+            "Morning", "☼", Color(0xFFF7B36D),
+        )
+
+        in 540 until 660 -> DayPhase(
+            "Late morning", "☼", Color(0xFFF7CF69),
+        )
+
+        in 660 until 780 -> DayPhase(
+            "Midday", "☼", Color(0xFFFFE66D),
+        )
+
+        in 780 until 960 -> DayPhase(
+            "Afternoon", "☼", Color(0xFFF4BB83),
+        )
+
+        in 960 until 1080 -> DayPhase(
+            "Late afternoon", "☼", Color(0xFFE99480),
+        )
+
+        in 1080 until 1140 -> DayPhase(
+            "Sunset", "☼", Color(0xFFD978A7),
+        )
+
+        in 1140 until 1200 -> DayPhase(
+            "Dusk", "☾", Color(0xFFA779BF),
+        )
+
+        in 1200 until 1260 -> DayPhase(
+            "Evening", "☾", Color(0xFF718AC1),
+        )
+
+        else -> DayPhase(
+            "Late night", "☾", Color(0xFF5067A7),
+        )
     }
 }
 
@@ -361,44 +508,147 @@ private fun TimeScreen(
 private fun TimezoneCard(
     timezone: Timezone,
     time: String,
+    date: String,
+    phase: DayPhase,
     people: List<Person>,
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+    val shape = MaterialTheme.shapes.large
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        phase.color.copy(alpha = 0.20f),
+                        backgroundColor,
+                    ),
+                    start = Offset.Zero,
+                    end = Offset(900f, 600f),
+                ),
+                shape = shape,
+            )
+            .border(
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = phase.color.copy(alpha = 0.65f),
+                ),
+                shape = shape,
+            )
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        // Row 1: timezone name on the left, time on the right.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            Text(
+                text = timezone.displayName,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+
+            Spacer(Modifier.size(8.dp))
+
+            Text(
+                text = time,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor,
+            )
+        }
+
+        // Row 2: date on the left, phase on the right.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = date,
+                style = MaterialTheme.typography.bodySmall,
+                color = secondaryTextColor,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+
+            Spacer(Modifier.size(8.dp))
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 Text(
-                    text = timezone.displayName,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    text = phase.icon,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = phase.color,
                 )
+
                 Text(
-                    text = time,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    text = phase.label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = phase.color,
                 )
             }
+        }
 
-            people.forEach { person ->
+        // Row 3+: outlined person chips that wrap as complete units.
+        if (people.isNotEmpty()) {
+            PeopleChips(
+                people = people,
+                accentColor = phase.color,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PeopleChips(
+    people: List<Person>,
+    accentColor: Color,
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        people.forEach { person ->
+            val displayName = person.nickname
+                ?.takeIf { it.isNotBlank() }
+                ?: person.name
+
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = accentColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(10.dp),
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = accentColor.copy(alpha = 0.45f),
+                        shape = RoundedCornerShape(10.dp),
+                    )
+                    .padding(
+                        horizontal = 10.dp,
+                        vertical = 6.dp,
+                    ),
+            ) {
                 Text(
-                    text = person.nickname?.takeIf { it.isNotBlank() } ?: person.name,
+                    text = displayName,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
             }
         }
     }
 }
+
 
 @Composable
 private fun PeopleScreen(
