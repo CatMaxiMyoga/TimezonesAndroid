@@ -4,7 +4,6 @@ package com.miyuki.timezones.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,8 +12,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -28,7 +27,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.miyuki.timezones.R
 import com.miyuki.timezones.data.CustomField
 import com.miyuki.timezones.data.Person
 import com.miyuki.timezones.data.Timezone
@@ -89,7 +90,7 @@ fun PersonEditorDialog(
         mutableStateOf("")
     }
 
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<Int?>(null) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     val customFields = remember(person?.id, initialFields) {
@@ -111,11 +112,10 @@ fun PersonEditorDialog(
             onDismissRequest = {
                 showDeleteConfirmation = false
             },
-            title = { Text("Delete ${person.name}?") },
+            title = { Text(stringResource(R.string.delete_person_title, person.name)) },
             text = {
                 Text(
-                    "This permanently deletes this person and their custom fields. " +
-                            "Their timezone will be removed if nobody else uses it.",
+                    stringResource(R.string.delete_person_warning),
                 )
             },
             confirmButton = {
@@ -124,7 +124,7 @@ fun PersonEditorDialog(
                         onDelete?.invoke(person)
                     },
                 ) {
-                    Text("Delete Person")
+                    Text(stringResource(R.string.delete_person))
                 }
             },
             dismissButton = {
@@ -133,7 +133,7 @@ fun PersonEditorDialog(
                         showDeleteConfirmation = false
                     },
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             },
         )
@@ -141,7 +141,7 @@ fun PersonEditorDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             title = {
-                Text(if (person == null) "Add Person" else "Edit Person")
+                Text(if (person == null) stringResource(R.string.add_person) else stringResource(R.string.edit_person))
             },
             text = {
                 Column(
@@ -153,7 +153,7 @@ fun PersonEditorDialog(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Name *") },
+                        label = { Text(stringResource(R.string.name_required)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -161,12 +161,12 @@ fun PersonEditorDialog(
                     OutlinedTextField(
                         value = nickname,
                         onValueChange = { nickname = it },
-                        label = { Text("Nickname") },
+                        label = { Text(stringResource(R.string.nickname)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
 
-                    Text("Timezone")
+                    Text(stringResource(R.string.timezone))
 
                     if (!creatingTimezone && timezones.isNotEmpty()) {
                         Box {
@@ -179,7 +179,7 @@ fun PersonEditorDialog(
                                 Text(
                                     timezones.firstOrNull {
                                         it.id == selectedTimezoneId
-                                    }?.displayName ?: "Choose Timezone",
+                                    }?.displayName ?: stringResource(R.string.choose_timezone),
                                 )
                             }
 
@@ -206,7 +206,7 @@ fun PersonEditorDialog(
                         OutlinedTextField(
                             value = newTimezoneName,
                             onValueChange = { newTimezoneName = it },
-                            label = { Text("Timezone Display Name *") },
+                            label = { Text(stringResource(R.string.timezone_display_name_required)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -225,8 +225,8 @@ fun PersonEditorDialog(
                                     timezoneSuggestionsExpanded = true
                                     errorMessage = null
                                 },
-                                label = { Text("IANA Timezone ID *") },
-                                placeholder = { Text("Search, e.g. Berlin") },
+                                label = { Text(stringResource(R.string.iana_timezone_id_required)) },
+                                placeholder = { Text(stringResource(R.string.search_berlin)) },
                                 singleLine = true,
                                 isError = newTimezoneId.isNotBlank() &&
                                         !isValidTimezone(newTimezoneId.trim()),
@@ -235,7 +235,7 @@ fun PersonEditorDialog(
                                         newTimezoneId.isNotBlank() &&
                                         !isValidTimezone(newTimezoneId.trim())
                                     ) {
-                                        Text("Choose a valid timezone ID.")
+                                        Text(stringResource(R.string.choose_valid_timezone_id))
                                     }
                                 },
                                 modifier = Modifier
@@ -300,7 +300,7 @@ fun PersonEditorDialog(
                                     errorMessage = null
                                 },
                             ) {
-                                Text("Choose an existing Timezone")
+                                Text(stringResource(R.string.choose_existing_timezone))
                             }
                         }
                     } else {
@@ -311,7 +311,7 @@ fun PersonEditorDialog(
                             },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text("Create a new Timezone")
+                            Text(stringResource(R.string.create_new_timezone))
                         }
                     }
 
@@ -332,7 +332,7 @@ fun PersonEditorDialog(
                                             suggestionsExpanded = true,
                                         )
                                     },
-                                    label = { Text("Field Name") },
+                                    label = { Text(stringResource(R.string.field_name)) },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
@@ -380,7 +380,7 @@ fun PersonEditorDialog(
                                         value = newValue,
                                     )
                                 },
-                                label = { Text("Value") },
+                                label = { Text(stringResource(R.string.value)) },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -390,7 +390,7 @@ fun PersonEditorDialog(
                                     customFields.removeAt(index)
                                 },
                             ) {
-                                Text("Remove Field")
+                                Text(stringResource(R.string.remove_field))
                             }
                         }
                     }
@@ -401,11 +401,11 @@ fun PersonEditorDialog(
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text("Add Custom Field")
+                        Text(stringResource(R.string.add_custom_field))
                     }
 
                     if (errorMessage != null) {
-                        Text(errorMessage!!)
+                        Text(stringResource(errorMessage!!))
                     }
 
                     if (person != null && onDelete != null) {
@@ -414,7 +414,7 @@ fun PersonEditorDialog(
                                 showDeleteConfirmation = true
                             },
                         ) {
-                            Text("Delete Person")
+                            Text(stringResource(R.string.delete_person))
                         }
                     }
                 }
@@ -424,23 +424,23 @@ fun PersonEditorDialog(
                     onClick = {
                         errorMessage = when {
                             name.isBlank() ->
-                                "Enter a Name."
+                                R.string.error_enter_name
 
                             creatingTimezone &&
                                     newTimezoneName.isBlank() ->
-                                "Enter a Timezone Display Name."
+                                R.string.error_enter_timezone_name
 
                             creatingTimezone &&
                                     newTimezoneId.isBlank() ->
-                                "Choose an IANA Timezone ID."
+                                R.string.error_choose_iana
 
                             creatingTimezone &&
                                     !isValidTimezone(newTimezoneId.trim()) ->
-                                "Choose a valid IANA Timezone ID."
+                                R.string.error_choose_valid_iana
 
                             !creatingTimezone &&
                                     selectedTimezoneId == null ->
-                                "Choose a Timezone."
+                                R.string.error_choose_timezone
 
                             else -> null
                         }
@@ -500,12 +500,12 @@ fun PersonEditorDialog(
                         }
                     },
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             },
         )

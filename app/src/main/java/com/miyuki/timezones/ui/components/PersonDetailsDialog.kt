@@ -20,6 +20,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.miyuki.timezones.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -102,7 +104,7 @@ fun PersonDetailsDialog(
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 Text(
-                                    text = "Timezone",
+                                    text = stringResource(R.string.timezone),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                         .copy(alpha = 0.75f),
@@ -136,7 +138,7 @@ fun PersonDetailsDialog(
                         timezone == null && customFields.isEmpty()
                     ) {
                         Text(
-                            text = "No additional details yet.",
+                            text = stringResource(R.string.no_additional_details),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 8.dp),
@@ -152,13 +154,13 @@ fun PersonDetailsDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     OutlinedButton(onClick = onDismiss) {
-                        Text("Close")
+                        Text(stringResource(R.string.close))
                     }
 
                     Spacer(Modifier.width(12.dp))
 
                     Button(onClick = onEdit) {
-                        Text("Edit details")
+                        Text(stringResource(R.string.edit_details))
                     }
                 }
             }

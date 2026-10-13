@@ -32,6 +32,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.miyuki.timezones.R
+import androidx.annotation.StringRes
+import java.time.format.FormatStyle
+import java.util.Locale
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -101,7 +107,7 @@ fun MainScreen() {
                 FloatingActionButton(
                     onClick = { showAddPerson = true }) {
                     Icon(
-                        imageVector = Icons.Default.Add, contentDescription = "Add Person"
+                        imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.add_person)
                     )
                 }
             }
@@ -117,7 +123,7 @@ fun MainScreen() {
                             contentDescription = null,
                         )
                     },
-                    label = { Text("Time") },
+                    label = { Text(stringResource(R.string.time)) },
                 )
 
                 NavigationBarItem(
@@ -129,7 +135,7 @@ fun MainScreen() {
                             contentDescription = null,
                         )
                     },
-                    label = { Text("People") },
+                    label = { Text(stringResource(R.string.people)) },
                 )
             }
         },
@@ -276,6 +282,7 @@ private fun TimeScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
     val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -298,20 +305,9 @@ private fun TimeScreen(
     }
 
     fun formatDate(dateTime: ZonedDateTime): String {
-        val day = dateTime.dayOfMonth
-        val suffix = when {
-            day % 100 in 11..13 -> "th"
-            day % 10 == 1 -> "st"
-            day % 10 == 2 -> "nd"
-            day % 10 == 3 -> "rd"
-            else -> "th"
-        }
-
-        return dateTime.format(
-            DateTimeFormatter.ofPattern(
-                "EEEE, d'${suffix}' MMMM yyyy",
-            ),
-        )
+        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+            .withLocale(locale)
+        return dateTime.format(formatter)
     }
 
     val localPhase = getDayPhase(currentTime)
@@ -371,7 +367,7 @@ private fun TimeScreen(
                         )
 
                         Text(
-                            text = localPhase.label,
+                            text = stringResource(localPhase.labelRes),
                             style = MaterialTheme.typography.titleMedium,
                             color = localPhase.color,
                             fontWeight = FontWeight.Medium,
@@ -441,7 +437,7 @@ private fun TimeScreen(
 }
 
 private data class DayPhase(
-    val label: String,
+    @StringRes val labelRes: Int,
     val icon: String,
     val color: Color,
 )
@@ -451,55 +447,55 @@ private fun getDayPhase(time: ZonedDateTime): DayPhase {
 
     return when (minuteOfDay) {
         in 0 until 180 -> DayPhase(
-            "Deep night", "✦", Color(0xFF344A91),
+            R.string.deep_night, "✦", Color(0xFF344A91),
         )
 
         in 180 until 300 -> DayPhase(
-            "Pre-dawn", "☾", Color(0xFF7868B2),
+            R.string.pre_dawn, "☾", Color(0xFF7868B2),
         )
 
         in 300 until 360 -> DayPhase(
-            "Dawn", "☼", Color(0xFFC18AC2),
+            R.string.dawn, "☼", Color(0xFFC18AC2),
         )
 
         in 360 until 420 -> DayPhase(
-            "Sunrise", "☼", Color(0xFFF49A91),
+            R.string.sunrise, "☼", Color(0xFFF49A91),
         )
 
         in 420 until 540 -> DayPhase(
-            "Morning", "☼", Color(0xFFF7B36D),
+            R.string.morning, "☼", Color(0xFFF7B36D),
         )
 
         in 540 until 660 -> DayPhase(
-            "Late morning", "☼", Color(0xFFF7CF69),
+            R.string.late_morning, "☼", Color(0xFFF7CF69),
         )
 
         in 660 until 780 -> DayPhase(
-            "Midday", "☼", Color(0xFFFFE66D),
+            R.string.noon, "☼", Color(0xFFFFE66D),
         )
 
         in 780 until 960 -> DayPhase(
-            "Afternoon", "☼", Color(0xFFF4BB83),
+            R.string.afternoon, "☼", Color(0xFFF4BB83),
         )
 
         in 960 until 1080 -> DayPhase(
-            "Late afternoon", "☼", Color(0xFFE99480),
+            R.string.late_afternoon, "☼", Color(0xFFE99480),
         )
 
         in 1080 until 1140 -> DayPhase(
-            "Sunset", "☼", Color(0xFFD978A7),
+            R.string.sunset, "☼", Color(0xFFD978A7),
         )
 
         in 1140 until 1200 -> DayPhase(
-            "Dusk", "☾", Color(0xFFA779BF),
+            R.string.dusk, "☾", Color(0xFFA779BF),
         )
 
         in 1200 until 1260 -> DayPhase(
-            "Evening", "☾", Color(0xFF718AC1),
+            R.string.evening, "☾", Color(0xFF718AC1),
         )
 
         else -> DayPhase(
-            "Late night", "☾", Color(0xFF5067A7),
+            R.string.late_night, "☾", Color(0xFF5067A7),
         )
     }
 }
@@ -591,7 +587,7 @@ private fun TimezoneCard(
                 )
 
                 Text(
-                    text = phase.label,
+                    text = stringResource(phase.labelRes),
                     style = MaterialTheme.typography.bodyMedium,
                     color = phase.color,
                 )
@@ -689,7 +685,7 @@ private fun PeopleScreen(
         Spacer(Modifier.size(28.dp))
 
         Text(
-            text = "People",
+            text = stringResource(R.string.people),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.SemiBold,
         )
@@ -700,7 +696,7 @@ private fun PeopleScreen(
             onClick = onReorderTimezones,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Reorder timezones")
+            Text(stringResource(R.string.reorder_timezones))
         }
 
         Spacer(Modifier.size(12.dp))
@@ -717,12 +713,12 @@ private fun PeopleScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "No people yet",
+                        text = stringResource(R.string.no_people_yet),
                         style = MaterialTheme.typography.titleMedium,
                     )
 
                     Text(
-                        text = "Add someone to start tracking their local time.",
+                        text = stringResource(R.string.add_someone_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

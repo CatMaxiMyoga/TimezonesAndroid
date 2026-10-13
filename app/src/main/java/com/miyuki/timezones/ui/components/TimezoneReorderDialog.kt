@@ -18,6 +18,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.miyuki.timezones.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,13 +53,13 @@ fun TimezoneReorderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Reorder Timezones") },
+        title = { Text(stringResource(R.string.reorder_title)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    text = "Drag the handle beside a Timezone to change its position.",
+                    text = stringResource(R.string.reorder_instructions),
                     style = MaterialTheme.typography.bodyMedium,
                 )
 
@@ -98,7 +100,7 @@ fun TimezoneReorderDialog(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Rounded.DragHandle,
-                                            contentDescription = "Drag to reorder",
+                                            contentDescription = stringResource(R.string.drag_to_reorder),
                                         )
                                     }
                                 }
@@ -114,12 +116,12 @@ fun TimezoneReorderDialog(
                     onSaveOrder(orderedTimezones.map { it.id })
                 },
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         },
     )
