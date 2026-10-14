@@ -634,6 +634,7 @@ private fun PeopleChips(
         people.forEach { person ->
             val displayName = person.nickname
                 ?.takeIf { it.isNotBlank() }
+                ?.let { "${person.name} ($it)" }
                 ?: person.name
 
             Box(
