@@ -1,5 +1,8 @@
 package com.miyuki.timezones.ui
 
+import androidx.annotation.StringRes
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,30 +34,31 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
-import com.miyuki.timezones.R
-import androidx.annotation.StringRes
-import java.time.format.FormatStyle
-import java.util.Locale
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.miyuki.timezones.R
 import com.miyuki.timezones.data.CustomField
 import com.miyuki.timezones.data.DatabaseProvider
 import com.miyuki.timezones.data.Person
@@ -64,10 +70,13 @@ import com.miyuki.timezones.ui.components.TimezoneReorderDialog
 import com.miyuki.timezones.viewmodel.PeopleViewModel
 import com.miyuki.timezones.viewmodel.PeopleViewModelFactory
 import kotlinx.coroutines.delay
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Date
+import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 import android.text.format.DateFormat as AndroidDateFormat
 
@@ -97,6 +106,7 @@ fun MainScreen() {
     var selectedPerson by remember { mutableStateOf<Person?>(null) }
     var showEditPerson by remember { mutableStateOf(false) }
     var showTimezoneReorder by remember { mutableStateOf(false) }
+    var comparisonTimezone by remember { mutableStateOf<Timezone?>(null) }
 
     val selectedPersonFields by viewModel.observeCustomFields(selectedPerson?.id ?: -1L)
         .collectAsState(initial = emptyList())
@@ -145,6 +155,8 @@ fun MainScreen() {
                 people = people,
                 timezones = timezones,
                 modifier = Modifier.padding(innerPadding),
+                onPersonClick = { selectedPerson = it; showEditPerson = false },
+                onTimezoneTimeClick = { comparisonTimezone = it },
             )
 
             MainTab.People -> PeopleScreen(
@@ -157,6 +169,10 @@ fun MainScreen() {
                 },
                 onReorderTimezones = { showTimezoneReorder = true })
         }
+    }
+
+    comparisonTimezone?.let { timezone ->
+        TimeComparisonDialog(timezone = timezone, onDismiss = { comparisonTimezone = null })
     }
 
     if (showAddPerson) {
@@ -280,6 +296,8 @@ private fun TimeScreen(
     people: List<Person>,
     timezones: List<Timezone>,
     modifier: Modifier = Modifier,
+    onPersonClick: (Person) -> Unit,
+    onTimezoneTimeClick: (Timezone) -> Unit,
 ) {
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
@@ -394,6 +412,7 @@ private fun TimeScreen(
                         PeopleChips(
                             people = localPeople,
                             accentColor = localPhase.color,
+                            onPersonClick = onPersonClick,
                         )
                     }
                 }
@@ -426,6 +445,8 @@ private fun TimeScreen(
                         time = formatTime(zoneTime),
                         date = formatDate(zoneTime),
                         phase = phase,
+                        onPersonClick = onPersonClick,
+                        onTimeClick = { onTimezoneTimeClick(timezone) },
                         people = people.filter {
                             it.timezoneId == timezone.id
                         },
@@ -507,6 +528,8 @@ private fun TimezoneCard(
     date: String,
     phase: DayPhase,
     people: List<Person>,
+    onPersonClick: (Person) -> Unit,
+    onTimeClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -558,6 +581,7 @@ private fun TimezoneCard(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = textColor,
+                modifier = Modifier.clickable(onClick = onTimeClick),
             )
         }
 
@@ -599,6 +623,7 @@ private fun TimezoneCard(
             PeopleChips(
                 people = people,
                 accentColor = phase.color,
+                onPersonClick = onPersonClick,
             )
         }
     }
@@ -608,6 +633,7 @@ private fun TimezoneCard(
 private fun PeopleChips(
     people: List<Person>,
     accentColor: Color,
+    onPersonClick: (Person) -> Unit,
 ) {
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -630,6 +656,7 @@ private fun PeopleChips(
                         color = accentColor.copy(alpha = 0.45f),
                         shape = RoundedCornerShape(10.dp),
                     )
+                    .clickable { onPersonClick(person) }
                     .padding(
                         horizontal = 10.dp,
                         vertical = 6.dp,
@@ -779,6 +806,204 @@ private fun PeopleScreen(
                                 fontWeight = FontWeight.Medium,
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimeComparisonDialog(timezone: Timezone, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    val localZone = ZoneId.systemDefault()
+    val remoteZone = remember(timezone.ianaId) { ZoneId.of(timezone.ianaId) }
+    val localDate = remember(localZone) { LocalDate.now(localZone) }
+
+    var minuteOfDay by remember(timezone.id) {
+        val now = ZonedDateTime.now(localZone)
+        mutableIntStateOf(((now.hour * 60 + now.minute + 7) / 15 * 15).coerceIn(0, 1440))
+    }
+    // Use the local wall clock and resolve it in the real IANA zone.
+    // This preserves the intended 00:00 -> next 00:00 range across DST days.
+    val local = localDate.atStartOfDay().plusMinutes(minuteOfDay.toLong()).atZone(localZone)
+    val remote = local.toInstant().atZone(remoteZone)
+
+    // Same system-controlled time formatter as TimeScreen.
+    fun formatTime(time: ZonedDateTime): String =
+        AndroidDateFormat.getTimeFormat(context).apply {
+            timeZone = java.util.TimeZone.getTimeZone(time.zone)
+        }.format(Date.from(time.toInstant()))
+
+    // Same localized LONG date format as TimeScreen.
+    val dateFormatter = remember(locale) {
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)
+    }
+
+    val localPhase = getDayPhase(local)
+    val remotePhase = getDayPhase(remote)
+    val animatedLocalColor by animateColorAsState(
+        targetValue = localPhase.color,
+        animationSpec = tween(durationMillis = 650),
+        label = "Local phase gradient",
+    )
+    val animatedRemoteColor by animateColorAsState(
+        targetValue = remotePhase.color,
+        animationSpec = tween(durationMillis = 650),
+        label = "Remote phase gradient",
+    )
+    val shape = RoundedCornerShape(28.dp)
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val background = MaterialTheme.colorScheme.background
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = shape,
+            color = background,
+            border = BorderStroke(
+                1.dp,
+                Brush.horizontalGradient(
+                    listOf(animatedLocalColor.copy(alpha = 0.7f), animatedRemoteColor.copy(alpha = 0.7f)),
+                ),
+            ),
+            tonalElevation = 0.dp,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .drawWithCache {
+                        val topColors = Brush.horizontalGradient(
+                            listOf(
+                                animatedLocalColor.copy(alpha = 0.28f),
+                                animatedRemoteColor.copy(alpha = 0.28f),
+                            ),
+                        )
+                        val fade = Brush.verticalGradient(
+                            0f to Color.Transparent,
+                            1f to background,
+                        )
+                        onDrawBehind {
+                            drawRect(color = background)
+                            drawRect(brush = topColors)
+                            drawRect(brush = fade)
+                        }
+                    },
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                ) {
+                    Text(
+                        "Compare times",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = onSurface,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text("Your time", style = MaterialTheme.typography.labelMedium, color = onSurface.copy(alpha = 0.75f))
+                            Text(formatTime(local), style = MaterialTheme.typography.headlineMedium, color = onSurface)
+                            Text(local.format(dateFormatter), style = MaterialTheme.typography.labelSmall, color = onSurface.copy(alpha = 0.75f))
+                            Text("${localPhase.icon} ${stringResource(localPhase.labelRes)}", style = MaterialTheme.typography.labelSmall, color = animatedLocalColor)
+                        }
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(timezone.displayName, style = MaterialTheme.typography.labelMedium, color = onSurface.copy(alpha = 0.75f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                            Text(formatTime(remote), style = MaterialTheme.typography.headlineMedium, color = onSurface)
+                            Text(remote.format(dateFormatter), style = MaterialTheme.typography.labelSmall, color = onSurface.copy(alpha = 0.75f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                            Text("${remotePhase.icon} ${stringResource(remotePhase.labelRes)}", style = MaterialTheme.typography.labelSmall, color = animatedRemoteColor, textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                        }
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Your time", style = MaterialTheme.typography.labelMedium, color = animatedLocalColor)
+                        Slider(
+                            value = minuteOfDay.toFloat(),
+                            onValueChange = { minuteOfDay = (it / 15f).roundToInt().coerceIn(0, 96) * 15 },
+                            valueRange = 0f..1440f,
+                            steps = 0,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = androidx.compose.material3.SliderDefaults.colors(
+                                thumbColor = onSurface,
+                                activeTrackColor = animatedLocalColor,
+                                inactiveTrackColor = animatedRemoteColor.copy(alpha = 0.40f),
+                            ),
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(formatTime(localDate.atStartOfDay(localZone)), style = MaterialTheme.typography.labelSmall)
+                            Text(formatTime(localDate.atTime(12, 0).atZone(localZone)), style = MaterialTheme.typography.labelSmall)
+                            Text(formatTime(localDate.plusDays(1).atStartOfDay(localZone)), style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    // The second slider covers the exact same local-day interval,
+                    // displayed in the compared timezone. Both control the same instant.
+                    // Its endpoints can have different clock offsets on DST transition days.
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            timezone.displayName,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = animatedRemoteColor,
+                        )
+                        Slider(
+                            value = minuteOfDay.toFloat(),
+                            onValueChange = {
+                                minuteOfDay = (it / 15f).roundToInt().coerceIn(0, 96) * 15
+                            },
+                            valueRange = 0f..1440f,
+                            steps = 0,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = androidx.compose.material3.SliderDefaults.colors(
+                                thumbColor = onSurface,
+                                activeTrackColor = animatedRemoteColor,
+                                inactiveTrackColor = animatedLocalColor.copy(alpha = 0.40f),
+                            ),
+                        )
+                        val remoteStart = localDate.atStartOfDay(localZone)
+                            .withZoneSameInstant(remoteZone)
+                        val remoteMiddle = localDate.atTime(12, 0).atZone(localZone)
+                            .withZoneSameInstant(remoteZone)
+                        val remoteEnd = localDate.plusDays(1).atStartOfDay(localZone)
+                            .withZoneSameInstant(remoteZone)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(formatTime(remoteStart), style = MaterialTheme.typography.labelSmall)
+                            Text(formatTime(remoteMiddle), style = MaterialTheme.typography.labelSmall)
+                            Text(formatTime(remoteEnd), style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                val now = ZonedDateTime.now(localZone)
+                                minuteOfDay = ((now.hour * 60 + now.minute + 7) / 15 * 15).coerceIn(0, 1440)
+                            },
+                            border = BorderStroke(1.dp, animatedLocalColor.copy(alpha = 0.65f)),
+                        ) { Text("Now") }
+                        Button(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ),
+                        ) { Text("Done") }
                     }
                 }
             }
