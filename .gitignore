@@ -40,3 +40,6 @@ signing.properties
 # OS files
 .DS_Store
 Thumbs.db
+
+# Generated release artifacts
+/app/release/
