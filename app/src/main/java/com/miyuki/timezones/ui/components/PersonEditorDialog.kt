@@ -1,4 +1,3 @@
-
 package com.miyuki.timezones.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
@@ -70,9 +69,13 @@ fun PersonEditorDialog(
         mutableStateOf(person?.nickname.orEmpty())
     }
 
-    var selectedTimezoneId by remember(person?.id, timezones) {
+    val prioritizedTimezones = remember(timezones) {
+        timezones.sortedWith(compareBy<Timezone> { it.ianaId != ZoneId.systemDefault().id }.thenBy { it.order })
+    }
+
+    var selectedTimezoneId by remember(person?.id, prioritizedTimezones) {
         mutableStateOf(
-            person?.timezoneId ?: timezones.firstOrNull()?.id,
+            person?.timezoneId ?: prioritizedTimezones.firstOrNull()?.id,
         )
     }
     var timezoneMenuExpanded by remember { mutableStateOf(false) }
@@ -189,7 +192,7 @@ fun PersonEditorDialog(
                                     timezoneMenuExpanded = false
                                 },
                             ) {
-                                timezones.forEach { timezone ->
+                                prioritizedTimezones.forEach { timezone ->
                                     DropdownMenuItem(
                                         text = { Text(timezone.displayName) },
                                         onClick = {
@@ -228,13 +231,11 @@ fun PersonEditorDialog(
                                 label = { Text(stringResource(R.string.iana_timezone_id_required)) },
                                 placeholder = { Text(stringResource(R.string.search_berlin)) },
                                 singleLine = true,
-                                isError = newTimezoneId.isNotBlank() &&
-                                        !isValidTimezone(newTimezoneId.trim()),
+                                isError = newTimezoneId.isNotBlank() && !isValidTimezone(
+                                    newTimezoneId.trim()
+                                ),
                                 supportingText = {
-                                    if (
-                                        newTimezoneId.isNotBlank() &&
-                                        !isValidTimezone(newTimezoneId.trim())
-                                    ) {
+                                    if (newTimezoneId.isNotBlank() && !isValidTimezone(newTimezoneId.trim())) {
                                         Text(stringResource(R.string.choose_valid_timezone_id))
                                     }
                                 },
@@ -246,26 +247,25 @@ fun PersonEditorDialog(
                                     ),
                             )
 
-                            val matchingTimezones = remember(newTimezoneId) {
+                            val matchingTimezones = remember(newTimezoneId, timezones) {
+                                val existingIds = timezones.map { it.ianaId.lowercase() }.toSet()
                                 val query = newTimezoneId.trim()
 
                                 if (query.isBlank()) {
-                                    availableTimezoneIds.take(8)
-                                } else {
-                                    availableTimezoneIds
-                                        .filter {
-                                            it.contains(
-                                                query,
-                                                ignoreCase = true,
-                                            )
-                                        }
+                                    availableTimezoneIds.filter { it.lowercase() !in existingIds }
                                         .take(8)
+                                } else {
+                                    availableTimezoneIds.filter {
+                                        it.lowercase() !in existingIds && it.contains(
+                                            query,
+                                            ignoreCase = true,
+                                        )
+                                    }.take(8)
                                 }
                             }
 
                             ExposedDropdownMenu(
-                                expanded = timezoneSuggestionsExpanded &&
-                                        matchingTimezones.isNotEmpty(),
+                                expanded = timezoneSuggestionsExpanded && matchingTimezones.isNotEmpty(),
                                 onDismissRequest = {
                                     timezoneSuggestionsExpanded = false
                                 },
@@ -277,8 +277,7 @@ fun PersonEditorDialog(
                                             newTimezoneId = timezoneId
 
                                             if (newTimezoneName.isBlank()) {
-                                                newTimezoneName = timezoneId
-                                                    .substringAfterLast('/')
+                                                newTimezoneName = timezoneId.substringAfterLast('/')
                                                     .replace('_', ' ')
                                             }
 
@@ -294,8 +293,7 @@ fun PersonEditorDialog(
                             TextButton(
                                 onClick = {
                                     creatingTimezone = false
-                                    selectedTimezoneId =
-                                        timezones.firstOrNull()?.id
+                                    selectedTimezoneId = prioritizedTimezones.firstOrNull()?.id
                                     timezoneSuggestionsExpanded = false
                                     errorMessage = null
                                 },
@@ -317,53 +315,55 @@ fun PersonEditorDialog(
 
                     customFields.forEachIndexed { index, field ->
                         HorizontalDivider(
-                            thickness = 2.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant
+                            thickness = 2.dp, color = MaterialTheme.colorScheme.outlineVariant
                         )
                         Column(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Box {
+                            val usedNames = customFields.withIndex().filter { it.index != index }
+                                .map { it.value.name.trim().lowercase() }.toSet()
+                            val matches = fieldNameSuggestions.distinctBy { it.trim().lowercase() }
+                                .filter { suggestion ->
+                                    val normalized = suggestion.trim().lowercase()
+                                    normalized.isNotEmpty() && normalized !in usedNames && suggestion.contains(
+                                        field.name.trim(), ignoreCase = true
+                                    ) && !suggestion.equals(field.name.trim(), ignoreCase = true)
+                                }.take(6)
+
+                            ExposedDropdownMenuBox(
+                                expanded = field.suggestionsExpanded && matches.isNotEmpty(),
+                                onExpandedChange = { expanded ->
+                                    customFields[index] =
+                                        customFields[index].copy(suggestionsExpanded = expanded)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
                                 OutlinedTextField(
                                     value = field.name,
                                     onValueChange = { newName ->
-                                        customFields[index] = field.copy(
+                                        customFields[index] = customFields[index].copy(
                                             name = newName,
                                             suggestionsExpanded = true,
                                         )
                                     },
                                     label = { Text(stringResource(R.string.field_name)) },
                                     singleLine = true,
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
                                 )
-
-                                val matches = fieldNameSuggestions
-                                    .filter {
-                                        it.contains(
-                                            field.name,
-                                            ignoreCase = true,
-                                        ) && !it.equals(
-                                            field.name,
-                                            ignoreCase = true,
-                                        )
-                                    }
-                                    .take(6)
-
-                                DropdownMenu(
-                                    expanded = field.suggestionsExpanded &&
-                                            field.name.isNotBlank() &&
-                                            matches.isNotEmpty(),
+                                ExposedDropdownMenu(
+                                    expanded = field.suggestionsExpanded && matches.isNotEmpty(),
                                     onDismissRequest = {
-                                        customFields[index] = field.copy(
-                                            suggestionsExpanded = false,
-                                        )
+                                        customFields[index] =
+                                            customFields[index].copy(suggestionsExpanded = false)
                                     },
                                 ) {
                                     matches.forEach { suggestion ->
                                         DropdownMenuItem(
                                             text = { Text(suggestion) },
                                             onClick = {
-                                                customFields[index] = field.copy(
+                                                customFields[index] = customFields[index].copy(
                                                     name = suggestion,
                                                     suggestionsExpanded = false,
                                                 )
@@ -423,24 +423,23 @@ fun PersonEditorDialog(
                 Button(
                     onClick = {
                         errorMessage = when {
-                            name.isBlank() ->
-                                R.string.error_enter_name
+                            name.isBlank() -> R.string.error_enter_name
 
-                            creatingTimezone &&
-                                    newTimezoneName.isBlank() ->
-                                R.string.error_enter_timezone_name
+                            creatingTimezone && newTimezoneName.isBlank() -> R.string.error_enter_timezone_name
 
-                            creatingTimezone &&
-                                    newTimezoneId.isBlank() ->
-                                R.string.error_choose_iana
+                            creatingTimezone && newTimezoneId.isBlank() -> R.string.error_choose_iana
 
-                            creatingTimezone &&
-                                    !isValidTimezone(newTimezoneId.trim()) ->
-                                R.string.error_choose_valid_iana
+                            creatingTimezone && !isValidTimezone(newTimezoneId.trim()) -> R.string.error_choose_valid_iana
 
-                            !creatingTimezone &&
-                                    selectedTimezoneId == null ->
-                                R.string.error_choose_timezone
+                            creatingTimezone && timezones.any {
+                                it.ianaId.equals(newTimezoneId.trim(), ignoreCase = true)
+                            } -> R.string.error_duplicate_timezone
+
+                            customFields.map { it.name.trim().lowercase() }
+                                .filter { it.isNotEmpty() }
+                                .let { it.size != it.toSet().size } -> R.string.error_duplicate_field
+
+                            !creatingTimezone && selectedTimezoneId == null -> R.string.error_choose_timezone
 
                             else -> null
                         }
@@ -460,8 +459,7 @@ fun PersonEditorDialog(
                                     customFields.map {
                                         it.name.trim() to it.value.trim()
                                     }.filter {
-                                        it.first.isNotEmpty() ||
-                                                it.second.isNotEmpty()
+                                        it.first.isNotEmpty() || it.second.isNotEmpty()
                                     },
                                 )
                             } else {
@@ -477,18 +475,16 @@ fun PersonEditorDialog(
                                     timezoneId = targetTimezoneId,
                                 )
 
-                                val updatedFields = customFields
-                                    .filter {
-                                        it.name.isNotBlank() || it.value.isNotBlank()
-                                    }
-                                    .map {
-                                        CustomField(
-                                            id = it.id ?: 0,
-                                            personId = person.id,
-                                            name = it.name.trim(),
-                                            value = it.value.trim(),
-                                        )
-                                    }
+                                val updatedFields = customFields.filter {
+                                    it.name.isNotBlank() || it.value.isNotBlank()
+                                }.map {
+                                    CustomField(
+                                        id = it.id ?: 0,
+                                        personId = person.id,
+                                        name = it.name.trim(),
+                                        value = it.value.trim(),
+                                    )
+                                }
 
                                 onSaveEdit?.invoke(
                                     updatedPerson,

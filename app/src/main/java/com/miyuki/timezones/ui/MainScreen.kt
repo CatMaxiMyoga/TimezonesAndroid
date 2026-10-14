@@ -56,9 +56,9 @@ import com.miyuki.timezones.data.DatabaseProvider
 import com.miyuki.timezones.data.Person
 import com.miyuki.timezones.data.Timezone
 import com.miyuki.timezones.repository.PeopleRepository
-import com.miyuki.timezones.ui.components.TimeComparisonDialog
 import com.miyuki.timezones.ui.components.PersonDetailsDialog
 import com.miyuki.timezones.ui.components.PersonEditorDialog
+import com.miyuki.timezones.ui.components.TimeComparisonDialog
 import com.miyuki.timezones.ui.components.TimezoneReorderDialog
 import com.miyuki.timezones.viewmodel.PeopleViewModel
 import com.miyuki.timezones.viewmodel.PeopleViewModelFactory
@@ -108,7 +108,8 @@ fun MainScreen() {
                 FloatingActionButton(
                     onClick = { showAddPerson = true }) {
                     Icon(
-                        imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.add_person)
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.add_person)
                     )
                 }
             }
@@ -272,12 +273,22 @@ fun MainScreen() {
     }
 
     if (showTimezoneReorder) {
-        TimezoneReorderDialog(timezones = timezones, onDismiss = {
-            showTimezoneReorder = false
-        }, onSaveOrder = { orderedIds ->
-            viewModel.reorderTimezones(orderedIds)
-            showTimezoneReorder = false
-        })
+        val hiddenTimezone = timezones.firstOrNull {
+            it.ianaId == ZoneId.systemDefault().id
+        }
+        val reorderableTimezones = timezones.filter { it.id != hiddenTimezone?.id }
+
+        TimezoneReorderDialog(
+            timezones = reorderableTimezones,
+            onDismiss = { showTimezoneReorder = false },
+            onSaveOrder = { orderedIds ->
+                // The hidden timezone is always first, even though it cannot be dragged.
+                viewModel.reorderTimezones(
+                    listOfNotNull(hiddenTimezone?.id) + orderedIds
+                )
+                showTimezoneReorder = false
+            },
+        )
     }
 }
 
@@ -314,8 +325,7 @@ private fun TimeScreen(
     }
 
     fun formatDate(dateTime: ZonedDateTime): String {
-        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
-            .withLocale(locale)
+        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)
         return dateTime.format(formatter)
     }
 
@@ -332,8 +342,7 @@ private fun TimeScreen(
     }
 
     val otherTimezones = timezones.filter { timezone ->
-        timezone.ianaId != currentTime.zone.id &&
-                people.any { it.timezoneId == timezone.id }
+        timezone.ianaId != currentTime.zone.id && people.any { it.timezoneId == timezone.id }
     }
 
     Box(
@@ -632,10 +641,9 @@ private fun PeopleChips(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         people.forEach { person ->
-            val displayName = person.nickname
-                ?.takeIf { it.isNotBlank() }
-                ?.let { "${person.name} ($it)" }
-                ?: person.name
+            val displayName =
+                person.nickname?.takeIf { it.isNotBlank() }?.let { "${person.name} ($it)" }
+                    ?: person.name
 
             Box(
                 modifier = Modifier
