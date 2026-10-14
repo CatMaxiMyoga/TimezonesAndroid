@@ -12,17 +12,24 @@ Yup, it's as simple as that!
 Go to the [latest release][latest] and download the `timezones.apk` file, or directly download it
 through [this link][download] :3
 
-After downloading the .apk file, open it on your phone and either the prompt to install, or first
-the prompt to allow installing from your browser, should pop up :3
+After downloading the APK, your browser should offer to open it directly. If Android asks you to
+allow installations from your browser, enable that permission and continue with the installation :3
 
-After downloading it, your browser should show an option to open the file, just use that, it's
-quicker than finding and opening the file yourself later :3
+## Usage and Features
 
-## Usage
+> [!Tip]
+> This app has translations for German as well!
+
+First of all, this app uses your phone's settings for both the date and time display formats. So
+if you use the 24-hour time, it uses that, if you don't, it uses the 12-hour time, and if you use
+for example `English (United States)` the dates will be formatted like `October 14, 2026` whereas
+if you use `English (United Kingdom)` the dates will be formatted like `14 October 2026`, and so on
+for other languages.
 
 To get started, add a person you wanna know the timezone of. You can do so by heading to the People
 tab and clicking the `+` button.
 
+<!--suppress ALL -->
 <img src="readme/01.png" width="400" alt="Select People Tab">
 
 <img src="readme/02.png" width="400" alt="Click on Add Button">
@@ -39,10 +46,9 @@ the name will be autofilled as "New York". After you're done, hit the Save butto
 > [!Note]
 > Multiple people can be in the same timezone, so don't name a timezone after a person!
 >
-> Also, as you might've guessed from the example, there's no spaces allowed in an IANA-Timezone ID,
-> so spaces are replaced with underscores `_`. But don't worry, you don't need to know the exact
-> IANA-Timezone ID to add it. There's a dropdown that uses the input as a search field, so typing
-> for example 'America' will show only options containing 'America' in the dropdown.
+> IANA timezone IDs use underscores instead of spaces in names, like `America/New_York`. But don't
+> worry, you don't need to memorize them! There's a dropdown that uses the input as a search field,
+> so typing for example 'America' will show only options containing 'America' in the dropdown.
 
 <img src="readme/04.png" width="400" alt="Example Information">
 
@@ -84,6 +90,10 @@ field again!
 
 <img src="readme/12.png" width="400" alt="Example Field and Remove Field button">
 
+Also! Once you've added custom fields on other people, when you go to add a new person or edit an
+existing person, typing the first letter into a Field Name field will trigger an autocomplete
+dropdown with all the custom fields that have already been created!
+
 In the Edit Person Dialog, you can also choose to delete a Person from the app or change the
 Timezone. If there is a timezone that no people are using anymore, for example you delete the last
 person that was using a timezone, or change their timezone to a different one, the unused timezone
@@ -106,8 +116,8 @@ Back in the Time tab, if you click on the time of a timezone, it opens the compa
 <img src="readme/16.png" width="400" alt="Comparison Dialog">
 
 Here you can drag the slider around to compare your time to the chosen timezone's time, from
-the last 12am/00:00 in the past/right now, to the next 12am/00:00 in the future, so 24 hours in
-total, in 10 minute steps.
+midnight at the beginning of the current day to midnight at the beginning of the next day, in
+10-minute steps.
 
 Don't like the order of the timezones? Switch to the People tab and tap the "Reorder timezones"
 button!
