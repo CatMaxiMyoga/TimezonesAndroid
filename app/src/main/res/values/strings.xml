@@ -50,4 +50,8 @@
     <string name="reorder_title">Reorder Timezones</string>
     <string name="reorder_instructions">Drag the handle beside a Timezone to change its position.</string>
     <string name="drag_to_reorder">Drag to reorder</string>
+    <string name="compare_times">Compare Times</string>
+    <string name="your_time">Your Time</string>
+    <string name="now">Now</string>
+    <string name="done">Done</string>
 </resources>

@@ -51,4 +51,8 @@
     <string name="reorder_title">Zeitzonen sortieren</string>
     <string name="reorder_instructions">Ziehe den Griff neben einer Zeitzone, um ihre Position zu ändern.</string>
     <string name="drag_to_reorder">Zum Sortieren ziehen.</string>
+    <string name="compare_times">Zeiten vergleichen</string>
+    <string name="your_time">Deine Zeit</string>
+    <string name="now">Jetzt</string>
+    <string name="done">Fertig</string>
 </resources>

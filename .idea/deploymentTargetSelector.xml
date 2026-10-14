@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-10-13T02:23:53.131974200Z">
+        <DropdownSelection timestamp="2026-10-14T02:49:04.567935200Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\lucie\.android\avd\XIAOMI_15_Ultra.avd" />
