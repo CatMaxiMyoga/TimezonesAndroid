@@ -17,10 +17,8 @@ android {
         minSdk = 36
         //noinspection OldTargetApi
         targetSdk = 36
-        versionCode = 9
+        versionCode = 10
         versionName = "1.0.4"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -28,6 +26,9 @@ android {
             optimization {
                 enable = false
             }
+        }
+        debug {
+            applicationIdSuffix = ".debug"
         }
     }
 
@@ -60,12 +61,6 @@ dependencies {
 
     ksp(libs.androidx.room.compiler)
 
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
 
