@@ -91,8 +91,8 @@ field again!
 <img src="readme/12.png" width="300" alt="Example Field and Remove Field button">
 
 Also! Once you've added custom fields on other people, when you go to add a new person or edit an
-existing person, typing the first letter into a Field Name field will trigger an autocomplete
-dropdown with all the custom fields that have already been created!
+existing person, entering the Field Name field will trigger a searchable autocomplete dropdown with
+all the custom fields that have already been created!
 
 In the Edit Person Dialog, you can also choose to delete a Person from the app or change the
 Timezone. If there is a timezone that no people are using anymore, for example you delete the last
