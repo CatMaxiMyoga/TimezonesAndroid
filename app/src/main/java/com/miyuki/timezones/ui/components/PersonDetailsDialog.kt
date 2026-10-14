@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,16 +22,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,6 +44,7 @@ import com.miyuki.timezones.R
 import com.miyuki.timezones.data.CustomField
 import com.miyuki.timezones.data.Person
 import com.miyuki.timezones.data.Timezone
+import com.miyuki.timezones.ui.theme.DecorativeBorderWidth
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -85,7 +86,7 @@ fun PersonDetailsDialog(
                         1f to Color.Transparent,
                     ), shape,
                 )
-                .border(1.dp, outline, shape)
+                .border(DecorativeBorderWidth, outline, shape)
                 .padding(22.dp),
         ) {
             Column {
@@ -119,7 +120,7 @@ fun PersonDetailsDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(animatedPhase.copy(alpha = 0.10f), RoundedCornerShape(18.dp))
-                                .border(1.dp, animatedPhase.copy(alpha = 0.40f), RoundedCornerShape(18.dp))
+                                .border(DecorativeBorderWidth, animatedPhase.copy(alpha = 0.40f), RoundedCornerShape(18.dp))
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(5.dp),
                         ) {
@@ -145,7 +146,53 @@ fun PersonDetailsDialog(
                     customFields.forEach { field ->
                         DetailCard(field.name, field.value, animatedPhase)
                     }
-                    if (timezone == null && customFields.isEmpty()) {
+                    if (!person.description.isNullOrBlank()) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(R.string.additional_details),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = colors.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp),
+                            )
+                            val descriptionShape = RoundedCornerShape(16.dp)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .drawWithCache {
+                                        val gradient = Brush.linearGradient(
+                                            colorStops = arrayOf(
+                                                0f to colors.surfaceContainer.copy(alpha = 0.65f),
+                                                0.35f to colors.surfaceContainer.copy(alpha = 0.55f),
+                                                0.85f to Color.Black.copy(alpha = 0.35f),
+                                                1f to Color.Black.copy(alpha = 0.35f),
+                                            ),
+                                            start = Offset.Zero,
+                                            end = Offset(size.width * 0.20f, size.height),
+                                        )
+                                        onDrawBehind {
+                                            drawRoundRect(
+                                                brush = gradient,
+                                                cornerRadius = CornerRadius(16.dp.toPx()),
+                                            )
+                                        }
+                                    }
+                                    .border(DecorativeBorderWidth, animatedPhase.copy(alpha = 0.22f), descriptionShape)
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                            ) {
+                                Text(
+                                    text = person.description,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colors.onSurface,
+                                )
+                            }
+                        }
+                    }
+
+                    if (timezone == null && customFields.isEmpty() && person.description.isNullOrBlank()) {
                         Text(
                             text = stringResource(R.string.no_additional_details),
                             style = MaterialTheme.typography.bodyMedium,
@@ -191,7 +238,7 @@ private fun DetailCard(label: String, value: String, accent: Color) {
         modifier = Modifier
             .fillMaxWidth()
             .background(colors.surfaceContainer.copy(alpha = 0.65f), shape)
-            .border(1.dp, accent.copy(alpha = 0.22f), shape)
+            .border(DecorativeBorderWidth, accent.copy(alpha = 0.22f), shape)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

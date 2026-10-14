@@ -52,6 +52,7 @@ fun PersonEditorDialog(
     onSave: (
         name: String,
         nickname: String,
+        description: String?,
         timezoneId: Long?,
         newTimezoneId: String,
         newTimezoneName: String,
@@ -67,6 +68,10 @@ fun PersonEditorDialog(
     }
     var nickname by remember(person?.id) {
         mutableStateOf(person?.nickname.orEmpty())
+    }
+
+    var description by remember(person?.id) {
+        mutableStateOf(person?.description.orEmpty())
     }
 
     val prioritizedTimezones = remember(timezones) {
@@ -404,6 +409,15 @@ fun PersonEditorDialog(
                         Text(stringResource(R.string.add_custom_field))
                     }
 
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text(stringResource(R.string.additional_details)) },
+                        minLines = 3,
+                        maxLines = 8,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
                     if (errorMessage != null) {
                         Text(stringResource(errorMessage!!))
                     }
@@ -449,6 +463,7 @@ fun PersonEditorDialog(
                                 onSave(
                                     name.trim(),
                                     nickname.trim(),
+                                    description.trim().ifBlank { null },
                                     if (creatingTimezone) {
                                         null
                                     } else {
@@ -472,6 +487,7 @@ fun PersonEditorDialog(
                                 val updatedPerson = person.copy(
                                     name = name.trim(),
                                     nickname = nickname.trim().ifBlank { null },
+                                    description = description.trim().ifBlank { null },
                                     timezoneId = targetTimezoneId,
                                 )
 

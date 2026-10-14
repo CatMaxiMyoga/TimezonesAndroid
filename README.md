@@ -76,7 +76,7 @@ custom information you added.
 
 <img src="readme/09.png" width="300" alt="Person Details">
 
-To add custom information, in the Add Person or Edit Person dialog (Press 'Edit Details' in the
+To add custom information, use the Additional Information field, or in the Add Person or Edit Person dialog (Press 'Edit Details' in the
 Details dialog), click the "Add Field" button.
 
 <img src="readme/10.png" width="300" alt="Add Field button">

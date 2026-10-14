@@ -24,5 +24,6 @@ data class Person(
     val id: Long = 0,
     val name: String,
     val nickname: String?,
+    val description: String? = null,
     val timezoneId: Long
 )

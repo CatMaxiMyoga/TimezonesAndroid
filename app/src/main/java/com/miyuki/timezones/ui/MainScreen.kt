@@ -60,6 +60,7 @@ import com.miyuki.timezones.ui.components.PersonDetailsDialog
 import com.miyuki.timezones.ui.components.PersonEditorDialog
 import com.miyuki.timezones.ui.components.TimeComparisonDialog
 import com.miyuki.timezones.ui.components.TimezoneReorderDialog
+import com.miyuki.timezones.ui.theme.DecorativeBorderWidth
 import com.miyuki.timezones.viewmodel.PeopleViewModel
 import com.miyuki.timezones.viewmodel.PeopleViewModelFactory
 import kotlinx.coroutines.delay
@@ -177,6 +178,7 @@ fun MainScreen() {
             onSave = {
                     name,
                     nickname,
+                    description,
                     timezoneId,
                     newTimezoneId,
                     newTimezoneName,
@@ -194,6 +196,7 @@ fun MainScreen() {
                     viewModel.addPerson(
                         name = name,
                         nickname = nickname.ifBlank { null },
+                        description = description?.ifBlank { null },
                         timezoneId = timezoneId,
                         customFields = fields,
                     )
@@ -206,6 +209,7 @@ fun MainScreen() {
                         viewModel.addPerson(
                             name = name,
                             nickname = nickname.ifBlank { null },
+                            description = description?.ifBlank { null },
                             timezoneId = createdTimezoneId,
                             customFields = fields,
                         )
@@ -244,7 +248,7 @@ fun MainScreen() {
             onDismiss = {
                 showEditPerson = false
             },
-            onSave = { _, _, _, _, _, _ -> },
+            onSave = { _, _, _, _, _, _, _ -> },
             onSaveEdit = { updatedPerson, updatedFields, newTimezoneId, newTimezoneName ->
                 if (newTimezoneId != null && newTimezoneName != null) {
                     viewModel.addTimezone(
@@ -552,7 +556,7 @@ private fun TimezoneCard(
             )
             .border(
                 border = BorderStroke(
-                    width = 1.dp,
+                    width = DecorativeBorderWidth,
                     color = phase.color.copy(alpha = 0.65f),
                 ),
                 shape = shape,
@@ -652,7 +656,7 @@ private fun PeopleChips(
                         shape = RoundedCornerShape(10.dp),
                     )
                     .border(
-                        width = 1.dp,
+                        width = DecorativeBorderWidth,
                         color = accentColor.copy(alpha = 0.45f),
                         shape = RoundedCornerShape(10.dp),
                     )

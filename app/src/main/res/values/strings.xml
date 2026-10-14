@@ -56,4 +56,5 @@
     <string name="done">Done</string>
     <string name="error_duplicate_timezone">This timezone was already added. Choose the existing timezone instead.</string>
     <string name="error_duplicate_field">A person cannot have multiple fields with the same name.</string>
+    <string name="additional_details">Additional Details</string>
 </resources>

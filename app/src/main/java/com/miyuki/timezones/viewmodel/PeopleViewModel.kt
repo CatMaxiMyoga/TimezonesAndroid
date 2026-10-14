@@ -34,6 +34,7 @@ class PeopleViewModel(
     fun addPerson(
         name: String,
         nickname: String?,
+        description: String?,
         timezoneId: Long,
         customFields: List<CustomField>
     ) {
@@ -41,6 +42,7 @@ class PeopleViewModel(
             repository.addPerson(
                 name = name,
                 nickname = nickname,
+                description = description,
                 timezoneId = timezoneId,
                 customFields = customFields
             )

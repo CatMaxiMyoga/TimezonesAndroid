@@ -43,6 +43,7 @@ class PeopleRepository(
     suspend fun addPerson(
         name: String,
         nickname: String?,
+        description: String?,
         timezoneId: Long,
         customFields: List<CustomField>
     ) {
@@ -51,6 +52,7 @@ class PeopleRepository(
                 Person(
                     name = name,
                     nickname = nickname,
+                    description = description,
                     timezoneId = timezoneId
                 )
             )

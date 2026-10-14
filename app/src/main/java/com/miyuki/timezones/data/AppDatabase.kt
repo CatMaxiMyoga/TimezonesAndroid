@@ -9,7 +9,7 @@ import androidx.room3.RoomDatabase
         Timezone::class,
         CustomField::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
